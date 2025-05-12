@@ -1,33 +1,52 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Objection Handler</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Transcribe n Vibe</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-color: #ffffff;
-    --text-color: #333333;
-    --primary-color: #4361ee;
-    --primary-hover: #3a0ca3;
+    /* Primary Brand Colors */
+    --beige: #E3E2E3;
+    --lighter-gray: #454554;
+    --darker-gray: #343541;
+    --smart-green: #0EA27F;
+    
+    /* Secondary Brand Colors */
+    --action-yellow: #FEDF0A;
+    --smart-blue: #3536DF;
+    --creative-purple: #41297D;
+    --rebel-orange: #FE524E;
+    
+    /* UI Mapping */
+    --bg-color: var(--beige);
+    --text-color: var(--darker-gray);
+    --primary-color: var(--smart-green);
+    --primary-hover: var(--creative-purple);
     --secondary-bg: #f8f9fa;
-    --border-color: #e9ecef;
+    --border-color: var(--lighter-gray);
     --shadow-color: rgba(0, 0, 0, 0.1);
+    --accent-color: var(--action-yellow);
     --radius: 12px;
     --inner-radius: 8px;
   }
   
   .dark-mode {
-    --bg-color: #121212;
-    --text-color: #f0f0f0;
-    --primary-color: #4895ef;
-    --primary-hover: #4cc9f0;
-    --secondary-bg: #1e1e1e;
+    --bg-color: var(--darker-gray);
+    --text-color: var(--beige);
+    --primary-color: var(--smart-green);
+    --primary-hover: var(--smart-blue);
+    --secondary-bg: var(--lighter-gray);
     --border-color: #2d2d2d;
     --shadow-color: rgba(0, 0, 0, 0.5);
+    --accent-color: var(--action-yellow);
+  }
+  
+  .dark-mode .logo {
+    filter: invert(1);
   }
   
   body { 
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+    font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif; 
     max-width: 650px; 
     margin: 20px auto; 
     line-height: 1.6; 
@@ -36,6 +55,16 @@
     transition: all 0.3s ease;
     padding: 0 20px;
     font-size: 15px;
+  }
+  
+  .logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .logo {
+    max-width: 280px;
+    height: auto;
   }
   
   .header-controls {
@@ -57,6 +86,7 @@
     border: none; 
     border-radius: var(--inner-radius); 
     cursor: pointer; 
+    font-family: 'Prompt', sans-serif;
     font-weight: 500;
     letter-spacing: 0.01em;
     transition: all 0.2s ease;
@@ -94,6 +124,8 @@
   }
   
   h2, h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
     color: var(--primary-color);
   }
   
@@ -135,7 +167,7 @@
   .dialog input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    box-shadow: 0 0 0 2px rgba(14, 162, 127, 0.2);
   }
   
   .api-key-section {
@@ -216,21 +248,33 @@
     background-color: var(--primary-color);
     transition: all 0.3s ease;
     border-radius: 28px;
-    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);
+    box-shadow: 0 4px 12px rgba(14, 162, 127, 0.25);
   }
   
   .record-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(67, 97, 238, 0.35);
+    background-color: var(--primary-hover);
+    box-shadow: 0 6px 16px rgba(65, 41, 125, 0.35);
   }
   
   .record-btn.active {
-    background-color: #dc3545;
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
+    background-color: var(--rebel-orange);
+    box-shadow: 0 4px 12px rgba(254, 82, 78, 0.25);
   }
   
   .record-btn.active:hover {
-    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.35);
+    box-shadow: 0 6px 16px rgba(254, 82, 78, 0.35);
+  }
+  
+  #end-transcription {
+    background-color: var(--smart-blue);
+    box-shadow: 0 4px 12px rgba(53, 54, 223, 0.25);
+    margin-left: 8px;
+  }
+  
+  #end-transcription:hover {
+    background-color: var(--creative-purple);
+    box-shadow: 0 6px 16px rgba(65, 41, 125, 0.35);
   }
   
   .model-selector {
@@ -245,9 +289,10 @@
     border: 1px solid var(--border-color);
     background-color: var(--bg-color);
     color: var(--text-color);
+    font-family: 'Prompt', sans-serif;
     font-size: 14px;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234361ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230EA27F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
     padding-right: 32px;
@@ -258,7 +303,7 @@
   select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    box-shadow: 0 0 0 2px rgba(14, 162, 127, 0.2);
   }
   
   .transcription-box,
@@ -277,6 +322,14 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }
   
+  .transcription-box {
+    border-left: 4px solid var(--smart-blue);
+  }
+  
+  .response-box {
+    border-left: 4px solid var(--smart-green);
+  }
+  
   .response-container {
     margin: 18px 0;
   }
@@ -293,6 +346,7 @@
   }
   
   .box-label {
+    font-family: 'Montserrat', sans-serif;
     font-weight: 600;
     margin-bottom: 12px;
     color: var(--primary-color);
@@ -309,6 +363,7 @@
     background-color: var(--secondary-bg);
     border-radius: var(--radius);
     border: 1px solid var(--border-color);
+    border-left: 4px solid var(--creative-purple);
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     transition: all 0.3s ease;
   }
@@ -356,7 +411,7 @@
     margin-bottom: 10px;
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-family: inherit;
+    font-family: 'Prompt', sans-serif;
     resize: vertical;
     font-size: 14px;
     transition: border-color 0.2s ease;
@@ -367,7 +422,7 @@
   textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+    box-shadow: 0 0 0 2px rgba(14, 162, 127, 0.2);
   }
   
   /* Preset management styles */
@@ -417,11 +472,11 @@
   .clear-btn {
     padding: 6px 12px;
     font-size: 0.85rem;
-    background-color: #dc3545;
+    background-color: var(--rebel-orange);
   }
   
   .clear-btn:hover {
-    background-color: #c82333;
+    background-color: #e63e39;
   }
   
   .history-list {
@@ -454,10 +509,32 @@
     color: var(--text-color);
     opacity: 0.7;
   }
+  
+  .footer {
+    margin-top: 40px;
+    padding: 15px 0;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+  }
+  
+  .footer a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+  }
 </style>
 
+<div class="logo-container">
+  <img src="Logo black.png" alt="AI Advantage Logo" class="logo">
+</div>
 <div class="header-controls">
-  <h2>Live Objection → Comeback</h2>
+  <h2>Transcribe n Vibe</h2>
   <div class="controls">
     <button id="theme-toggle" title="Toggle dark mode">🌓</button>
     <button id="settings-btn" title="Settings">⚙️</button>
@@ -1279,3 +1356,7 @@ r.onend = () => {
   }
 };
 </script>
+
+<footer class="footer">
+  <a href="https://myaiadvantage.com/" target="_blank" rel="noopener">Visit myaiadvantage.com</a>
+</footer>
