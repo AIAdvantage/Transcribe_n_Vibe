@@ -11,6 +11,21 @@
   --danger-color: #dc3545;
 }
 
+#status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: white; /* default - white for contrast inside button */
+  margin-right: 8px;
+  position: relative;
+  top: -1px;
+  transition: background-color 0.3s ease;
+}
+#status-dot.listening  { background: var(--warning-color); }
+#status-dot.processing { background: var(--primary-color); }
+#status-dot.error      { background: var(--danger-color); }
+
 body {
   font-family: Arial, sans-serif;
   max-width: 600px;
@@ -74,6 +89,16 @@ pre {
 
 #reply:not(:empty) {
   animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Styles for visualizer bars */
+.visualizer-bar {
+  width: 3px;
+  display: inline-block;
+  margin: 0 1px;
+  height: 5px;
+  background-color: var(--primary-color);
+  transition: height 0.1s ease-out;
 }
 
 /* Responsive adjustments */

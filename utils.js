@@ -96,21 +96,36 @@ class AudioProcessor {
             throw new Error('Audio context is not initialized');
         }
 
-        // Create visualizer bars
-        if (!this.visualizerInitialized) {
-            // Clear any existing bars
-            containerElement.innerHTML = '';
+        // Clear existing bars regardless of initialization state
+        containerElement.innerHTML = '';
+        this.visualizerBars = [];
+        
+        // Create a more visible container that works with both light and dark modes
+        containerElement.style.backgroundColor = 'rgba(128, 128, 128, 0.15)';
+        containerElement.style.borderRadius = '4px';
+        containerElement.style.padding = '5px';
+        containerElement.style.minWidth = '120px';
+        
+        // Create new bars (fewer bars for better visibility)
+        for (let i = 0; i < 12; i++) {
+            const bar = document.createElement('div');
             
-            // Create new bars
-            for (let i = 0; i < 20; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'visualizer-bar';
-                containerElement.appendChild(bar);
-                this.visualizerBars.push(bar);
-            }
+            // Skip CSS classes and set all styles directly
+            Object.assign(bar.style, {
+                display: 'inline-block',
+                width: '5px',
+                height: '5px',
+                margin: '0 2px',
+                backgroundColor: '#0EA27F',
+                transition: 'height 0.1s ease-out'
+            });
             
-            this.visualizerInitialized = true;
+            containerElement.appendChild(bar);
+            this.visualizerBars.push(bar);
         }
+        
+        console.log('Visualizer bars created:', this.visualizerBars.length);
+        this.visualizerInitialized = true;
 
         // Set up audio analyzer
         const source = this.audioContext.createMediaStreamSource(stream);
@@ -140,13 +155,24 @@ class AudioProcessor {
         }
         
         const average = sum / this.dataArray.length;
+        console.log('Audio level:', average); // Debug audio level
         
         // Update each bar with some randomization for a more natural look
         for (let i = 0; i < barCount; i++) {
             const bar = this.visualizerBars[i];
             const randomFactor = 0.8 + Math.random() * 0.4; // Random value between 0.8 and 1.2
-            const height = Math.max(5, Math.min(40, average * randomFactor * 0.2));
-            bar.style.height = height + 'px';
+            // Make the bars much more visible with a higher multiplier
+            const height = Math.max(5, Math.min(40, average * randomFactor * 0.8));
+            
+            // Directly set all CSS properties to ensure visibility
+            Object.assign(bar.style, {
+                height: height + 'px',
+                backgroundColor: '#0EA27F', // Hardcoded color instead of CSS variable
+                display: 'inline-block',
+                width: '3px',
+                margin: '0 1px',
+                transition: 'height 0.1s ease-out'
+            });
         }
         
         // Continue updating while analyzer exists
@@ -161,8 +187,17 @@ class AudioProcessor {
         
         // Reset visualizer bars
         for (const bar of this.visualizerBars) {
-            bar.style.height = '5px';
+            Object.assign(bar.style, {
+                height: '5px',
+                backgroundColor: 'rgba(14, 162, 127, 0.3)', // Dimmer when inactive
+                display: 'inline-block', // Ensure they're still visible
+                width: '5px',
+                margin: '0 2px',
+                transition: 'height 0.1s ease-out'
+            });
         }
+        
+        console.log('Visualizer stopped');
     }
 
     // Check if audio buffer contains actual speech (not just silence)
@@ -297,36 +332,43 @@ class UIStateManager {
     updateState(newState) {
         this.currentState = newState;
         
-        const statusDot = $('#status-dot');
-        const statusText = $('#status-text');
-        const recordBtn = $('#record-btn');
+        // Use direct document.querySelector instead of $ utility function
+        const statusDot = document.querySelector('#status-dot');
+        // statusText and recordBtn might not exist, so handle them carefully
+        const statusText = document.querySelector('#status-text');
+        const recordBtn = document.querySelector('#toggle'); // Updated to use the toggle button ID
         
-        // Update status indicator
-        statusDot.className = ''; // Reset classes
-        
-        switch (newState) {
-            case this.states.READY:
-                statusText.textContent = 'Ready';
-                recordBtn.classList.remove('recording');
-                break;
-                
-            case this.states.LISTENING:
-                statusText.textContent = 'Listening...';
-                statusDot.classList.add('listening');
-                recordBtn.classList.add('recording');
-                break;
-                
-            case this.states.PROCESSING:
-                statusText.textContent = 'Processing...';
-                statusDot.classList.add('processing');
-                recordBtn.classList.add('recording');
-                break;
-                
-            case this.states.ERROR:
-                statusText.textContent = 'Error';
-                statusDot.classList.add('error');
-                recordBtn.classList.remove('recording');
-                break;
+        // Only proceed if we have a status dot element
+        if (statusDot) {
+            // Update status indicator
+            statusDot.className = ''; // Reset classes
+            
+            switch (newState) {
+                case this.states.READY:
+                    if (statusText) statusText.textContent = 'Ready';
+                    if (recordBtn) recordBtn.classList.remove('recording');
+                    break;
+                    
+                case this.states.LISTENING:
+                    if (statusText) statusText.textContent = 'Listening...';
+                    statusDot.classList.add('listening');
+                    if (recordBtn) recordBtn.classList.add('recording');
+                    break;
+                    
+                case this.states.PROCESSING:
+                    if (statusText) statusText.textContent = 'Processing...';
+                    statusDot.classList.add('processing');
+                    if (recordBtn) recordBtn.classList.add('recording');
+                    break;
+                    
+                case this.states.ERROR:
+                    if (statusText) statusText.textContent = 'Error';
+                    statusDot.classList.add('error');
+                    if (recordBtn) recordBtn.classList.remove('recording');
+                    break;
+            }
+        } else {
+            console.warn('Status dot element not found');
         }
         
         return newState;

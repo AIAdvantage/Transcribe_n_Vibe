@@ -546,7 +546,10 @@
 
 <div class="options-row">
   <div class="recording-controls">
-    <button id="toggle" class="record-btn">🎤 Start Listening</button>
+    <button id="toggle" class="record-btn">
+      <span id="status-dot"></span>🎤 Start Listening
+    </button>
+    <div id="visualizer-container" style="margin-left: 10px; width: 120px; height: 30px; display: none; align-items: center; justify-content: center;"></div>
   </div>
 </div>
 
@@ -669,7 +672,26 @@ const appState = {
 };
 
 // Initialize theme and settings
+let audioProcessor = null;
+
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize audio processor if available
+  if (typeof AudioProcessor === 'function') {
+    try {
+      audioProcessor = new AudioProcessor();
+    } catch (e) {
+      console.error('Error initializing AudioProcessor:', e);
+    }
+  }
+  
+  // Initialize UI state manager with error handling
+  try {
+    window.uiStateManager = new UIStateManager();
+    console.log('UIStateManager initialized successfully');
+  } catch (e) {
+    console.error('Error initializing UIStateManager:', e);
+  }
+  
   // Load saved state
   loadSavedState();
   
@@ -679,6 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('theme_mode');
   if (savedTheme === 'dark') {
     document.body.classList.add('dark-mode');
+    
+    // Set the toggle icon text
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.textContent = '🌓';
+    }
   }
   
   // Set up event listeners with error handling
@@ -1065,6 +1093,15 @@ function toggleTheme() {
   document.body.classList.toggle('dark-mode');
   const isDark = document.body.classList.contains('dark-mode');
   localStorage.setItem('theme_mode', isDark ? 'dark' : 'light');
+  
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    if (isDark) {
+      themeToggle.textContent = '🌓';
+    } else {
+      themeToggle.textContent = '🌓';
+    }
+  }
 }
 
 // API Key dialog functions
@@ -1119,11 +1156,82 @@ function toggleRecording() {
     button.textContent = '🎤 Start Listening';
     button.classList.remove('active');
     document.getElementById('lastObjection').textContent = 'Your speech will appear here...';
+    
+    // Update UI state to ready with safe error handling
+    try {
+      if (window.uiStateManager && window.uiStateManager.states && window.uiStateManager.updateState) {
+        window.uiStateManager.updateState(window.uiStateManager.states.READY);
+      }
+    } catch (e) {
+      console.warn('Error updating UI state:', e);
+    }
+    
+    // Stop visualizer when recording stops if available
+    if (audioProcessor && typeof audioProcessor.stopVisualizer === 'function') {
+      try {
+        audioProcessor.stopVisualizer();
+        // Hide the visualizer container
+        const visualizerContainer = document.getElementById('visualizer-container');
+        if (visualizerContainer) {
+          visualizerContainer.style.display = 'none';
+        }
+      } catch (e) {
+        console.error('Error stopping visualizer:', e);
+      }
+    }
   } else {
-    r.start();
-    on = true;
-    button.textContent = '🛑 Stop Listening';
-    button.classList.add('active');
+    // Start speech recognition
+    try {
+      r.start();
+      on = true;
+      button.textContent = '🛑 Stop Listening';
+      button.classList.add('active');
+      
+      // Update UI state to listening with safe error handling
+      try {
+        if (window.uiStateManager && window.uiStateManager.states && window.uiStateManager.updateState) {
+          window.uiStateManager.updateState(window.uiStateManager.states.LISTENING);
+        }
+      } catch (e) {
+        console.warn('Error updating UI state:', e);
+      }
+      
+      // Start audio context and visualizer if available
+      if (audioProcessor && typeof audioProcessor.initAudioContext === 'function') {
+        try {
+          // Get audio stream for visualization
+          navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then(stream => {
+              audioProcessor.initAudioContext()
+                .then(() => {
+                  const visualizerContainer = document.getElementById('visualizer-container');
+                  if (visualizerContainer && typeof audioProcessor.setupVisualizer === 'function') {
+                    // Make the container visible
+                    visualizerContainer.style.display = 'flex';
+                    audioProcessor.setupVisualizer(stream, visualizerContainer);
+                  }
+                })
+                .catch(err => console.error('Failed to initialize audio context:', err));
+            })
+            .catch(err => console.error('Error accessing microphone:', err));
+        } catch (e) {
+          console.error('Error with audio processing:', e);
+          // Continue with recording even if visualization fails
+        }
+      }
+    } catch (e) {
+      console.error('Error starting speech recognition:', e);
+      alert('Failed to start speech recognition. Please try again.');
+      
+      // Update UI state to error with safe error handling
+      try {
+        if (window.uiStateManager && window.uiStateManager.states && window.uiStateManager.updateState) {
+          window.uiStateManager.updateState(window.uiStateManager.states.ERROR);
+        }
+      } catch (e) {
+        console.warn('Error updating UI state:', e);
+      }
+    }
   }
 }
 
@@ -1243,6 +1351,15 @@ async function generateResponse(text) {
   replyElement.textContent = 'Thinking...';
   replyElement.classList.add('pulsing');
   
+  // Update UI state to processing with safe error handling
+  try {
+    if (window.uiStateManager && window.uiStateManager.states && window.uiStateManager.updateState) {
+      window.uiStateManager.updateState(window.uiStateManager.states.PROCESSING);
+    }
+  } catch (e) {
+    console.warn('Error updating UI state:', e);
+  }
+  
   try {
     // Get selected model
     const model = appState.selectedModel;
@@ -1256,10 +1373,32 @@ async function generateResponse(text) {
     // Add to history after successful response
     addToHistory(text, reply, model);
     
+    // Update UI state back to listening if still recording with safe error handling
+    try {
+      if (window.uiStateManager && window.uiStateManager.states && window.uiStateManager.updateState) {
+        if (on) {
+          window.uiStateManager.updateState(window.uiStateManager.states.LISTENING);
+        } else {
+          window.uiStateManager.updateState(window.uiStateManager.states.READY);
+        }
+      }
+    } catch (e) {
+      console.warn('Error updating UI state:', e);
+    }
+    
   } catch (error) {
     // Handle errors
     console.error('Error:', error);
     replyElement.classList.remove('pulsing');
+    
+    // Update UI state to error with safe error handling
+    try {
+      if (window.uiStateManager && window.uiStateManager.states && window.uiStateManager.updateState) {
+        window.uiStateManager.updateState(window.uiStateManager.states.ERROR);
+      }
+    } catch (e) {
+      console.warn('Error updating UI state:', e);
+    }
     
     // Show appropriate error message
     if (error.message.includes('API key')) {
@@ -1360,3 +1499,6 @@ r.onend = () => {
 <footer class="footer">
   <a href="https://myaiadvantage.com/" target="_blank" rel="noopener">Visit myaiadvantage.com</a>
 </footer>
+
+<!-- Include utils.js for UIStateManager and other utilities -->
+<script src="utils.js"></script>
